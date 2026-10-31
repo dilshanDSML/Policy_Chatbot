@@ -1,0 +1,45 @@
+services:
+  api:
+    build: .
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://policybot:policybot@postgres:5432/policybot
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: ${JWT_SECRET:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      LANGSMITH_TRACING: ${LANGSMITH_TRACING:-true}
+      LANGSMITH_API_KEY: ${LANGSMITH_API_KEY:-}
+      LANGSMITH_PROJECT: ${LANGSMITH_PROJECT:-policybot}
+      ANSWER_MODEL: ${ANSWER_MODEL:-openai/gpt-oss-120b}
+      SMALL_MODEL: ${SMALL_MODEL:-openai/gpt-oss-20b}
+      LANGCHAIN_TRACING_V2: ${LANGSMITH_TRACING:-true}
+      LANGCHAIN_API_KEY: ${LANGSMITH_API_KEY:-}
+      LANGCHAIN_PROJECT: ${LANGSMITH_PROJECT:-policybot}
+    volumes:
+      - ./data:/app/data
+      - model_cache:/root/.cache/huggingface
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    image: pgvector/pgvector:0.8.7-pg17
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: policybot
+      POSTGRES_PASSWORD: policybot
+      POSTGRES_DB: policybot
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:8.10.2-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
+  model_cache:
